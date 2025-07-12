@@ -34,3 +34,7 @@ func (h *Logger) Infof(template string, args ...any) {
 func (h *Logger) Debugf(template string, args ...any) {
 	h.logger.Debug(fmt.Sprintf(template, args...))
 }
+
+func (h *Logger) Errorf(template string, args ...any) {
+	h.logger.Error(fmt.Sprintf(template, args...))
+}

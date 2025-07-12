@@ -3,6 +3,7 @@ package logger
 type LogLevel int
 
 const (
-	LogLevelDebug LogLevel = iota
+	LogLevelInvalid LogLevel = iota
+	LogLevelDebug
 	LogLevelInfo
 )
