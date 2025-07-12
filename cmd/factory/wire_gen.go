@@ -13,7 +13,8 @@ func InitApp() (App, func(), error) {
 	if err != nil {
 		return App{}, nil, err
 	}
-	app, cleanup := ProvideApp(logger)
+	httpProvider := ProvideHttpProvider()
+	app, cleanup := ProvideApp(logger, httpProvider)
 	return app, func() {
 		cleanup()
 	}, nil

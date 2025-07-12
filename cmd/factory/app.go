@@ -12,7 +12,10 @@ var AppSet = wire.NewSet(
 
 type App struct{}
 
-func ProvideApp(logger *logger.Logger) (App, func()) {
+func ProvideApp(
+	logger *logger.Logger,
+	_ HttpProvider,
+) (App, func()) {
 	logger.Infof("app inited")
 
 	return App{}, func() {
