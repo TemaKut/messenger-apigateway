@@ -1,10 +1,8 @@
 package websocket
 
 import (
-	"fmt"
 	"github.com/TemaKut/messenger-apigateway/internal/app/logger"
 	"golang.org/x/net/websocket"
-	"io"
 )
 
 type Handler struct {
@@ -27,18 +25,10 @@ func (h *Handler) Handle(conn *websocket.Conn) {
 			h.logger.Errorf("error closing websocket connection: %s", err)
 		}
 	}()
+	
+	session := NewSession(conn, h.logger)
 
-	for {
-		var message string
-
-		if err := websocket.Message.Receive(conn, &message); err != nil {
-			if err != io.EOF {
-				h.logger.Errorf("error receiving message: %s", err)
-			}
-
-			break
-		}
-
-		fmt.Println(message)
+	if err := session.HandleRequests(conn.Request().Context()); err != nil {
+		h.logger.Errorf("error handling requests: %s", err)
 	}
 }
