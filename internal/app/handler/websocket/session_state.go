@@ -17,20 +17,10 @@ func newUnauthorizedSessionState(session *Session) *unauthorizedSessionState {
 func (u *unauthorizedSessionState) handleRequest(ctx context.Context, req *pb.Request) error {
 	switch {
 	case req.GetAuth() != nil:
-		return u.handleAuthRequest(ctx, req.GetAuth())
+		//return u.handleAuthRequest(ctx, req.GetAuth())
 	default:
 		return fmt.Errorf("error unsupported request type")
 	}
-}
-
-func (u *unauthorizedSessionState) handleAuthRequest(ctx context.Context, auth *pb.AuthRequest) error {
-	// TODO auth and send response
-
-	if err := u.session.setState(sessionStateTypeAuthorized); err != nil {
-		return fmt.Errorf("error setting session state. %w", err)
-	}
-
-	return nil
 }
 
 type authorizedSessionState struct {

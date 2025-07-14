@@ -21,12 +21,11 @@ func (h *Handler) Handle(conn *websocket.Conn) {
 	defer func() {
 		h.logger.Debugf("close websocket connection")
 
-		if err := conn.Close(); err != nil {
-			h.logger.Errorf("error closing websocket connection: %s", err)
-		}
+		_ = conn.Close()
 	}()
-	
+
 	session := NewSession(conn, h.logger)
+	defer session.Shutdown()
 
 	if err := session.HandleRequests(conn.Request().Context()); err != nil {
 		h.logger.Errorf("error handling requests: %s", err)

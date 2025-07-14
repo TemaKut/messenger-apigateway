@@ -107,3 +107,24 @@ func (s *Session) setState(stateType sessionStateType) error {
 
 	return nil
 }
+
+func (s *Session) ctx() context.Context { // TODO данные о юзере и тд
+	ctx := context.Background()
+
+	ctx = context.WithValue(ctx, "Key", "Value")
+
+	return ctx
+}
+
+func (s *Session) sendResponse(ctx context.Context, response *pb.Response) error {
+	protoBytes, err := proto.Marshal(response)
+	if err != nil {
+		return fmt.Errorf("error marshalling response. %w", err)
+	}
+
+	if err := websocket.Message.Send(s.conn, protoBytes); err != nil {
+		return fmt.Errorf("error sending response. %w", err)
+	}
+
+	return nil
+}
