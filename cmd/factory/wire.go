@@ -10,7 +10,6 @@ func InitApp() (App, func(), error) {
 		wire.Build(
 			AppSet,
 			HttpSet,
-			ControllersSet,
 		),
 	)
 }

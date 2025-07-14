@@ -3,7 +3,6 @@ package websocket
 import (
 	"context"
 	"fmt"
-	"github.com/TemaKut/messenger-apigateway/internal/app/handler/websocket/controllers"
 	"github.com/TemaKut/messenger-apigateway/internal/app/logger"
 	pb "github.com/TemaKut/messenger-client-proto/gen/go"
 	"golang.org/x/net/websocket"
@@ -13,8 +12,7 @@ import (
 )
 
 type Session struct {
-	conn       *websocket.Conn
-	controller *controllers.Controller
+	conn *websocket.Conn
 
 	states       map[sessionStateType]sessionState
 	currentState sessionState
@@ -27,14 +25,12 @@ type Session struct {
 
 func NewSession(
 	conn *websocket.Conn,
-	controller *controllers.Controller,
 	logger *logger.Logger,
 ) *Session {
 	session := &Session{
-		conn:       conn,
-		controller: controller,
-		doneCh:     make(chan struct{}, 1),
-		logger:     logger,
+		conn:   conn,
+		doneCh: make(chan struct{}, 1),
+		logger: logger,
 	}
 
 	unauthorizedState := newUnauthorizedSessionState(session)
@@ -83,7 +79,7 @@ mainCycle:
 				return fmt.Errorf("error unmarshalling request. %w", err)
 			}
 
-			if err := s.currentState.handleRequest(ctx, NewRequest(s, &req)); err != nil {
+			if err := s.currentState.handleRequest(s.ctx(), &req); err != nil {
 				return fmt.Errorf("error handling request. %w", err)
 			}
 
@@ -134,14 +130,4 @@ func (s *Session) sendResponse(ctx context.Context, response *pb.Response) error
 	}
 
 	return nil
-}
-
-func (s *Session) getController() *controllers.Controller {
-	return s.controller
-}
-
-type invokeFn func(request *Request) error
-
-func (s *Session) invoke(fn invokeFn, request *Request) error {
-	return fn(request)
 }
