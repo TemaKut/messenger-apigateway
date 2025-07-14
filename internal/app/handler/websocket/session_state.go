@@ -16,12 +16,17 @@ func newUnauthorizedSessionState(session *Session) *unauthorizedSessionState {
 
 func (u *unauthorizedSessionState) handleRequest(ctx context.Context, req *pb.Request) error {
 	switch {
-	case req.GetAuth() != nil:
-		return nil
+	case req.GetUserRegister() != nil:
+		return u.handleUserRegisterRequest(ctx, req.GetUserRegister())
 	default:
 		return fmt.Errorf("error unsupported request type")
 	}
+}
 
+func (u *unauthorizedSessionState) handleUserRegisterRequest(
+	ctx context.Context,
+	register *pb.UserRegisterRequest,
+) error {
 	return nil
 }
 
