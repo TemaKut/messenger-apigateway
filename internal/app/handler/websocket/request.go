@@ -12,6 +12,10 @@ type Request struct {
 	req *pb.Request
 }
 
+func NewRequest(session *Session, req *pb.Request) *Request {
+	return &Request{session: session, req: req}
+}
+
 func (r *Request) Request() *pb.Request {
 	return r.req
 }
