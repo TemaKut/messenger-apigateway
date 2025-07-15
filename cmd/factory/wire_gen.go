@@ -6,14 +6,28 @@
 
 package factory
 
+import (
+	"github.com/TemaKut/messenger-apigateway/internal/app/adapter/auth"
+	"github.com/TemaKut/messenger-apigateway/internal/app/config"
+	"github.com/TemaKut/messenger-apigateway/internal/app/handler/websocket"
+)
+
 // Injectors from wire.go:
 
 func InitApp() (App, func(), error) {
-	logger, err := ProvideLogger()
+	configConfig := config.NewConfig()
+	logger, err := ProvideLogger(configConfig)
 	if err != nil {
 		return App{}, nil, err
 	}
-	app, cleanup := ProvideApp(logger)
+	adapter := auth.NewAdapter()
+	handler := websocket.NewHandler(adapter, logger)
+	httpServerProvider, err := ProvideHttpServerProvider(configConfig, handler)
+	if err != nil {
+		return App{}, nil, err
+	}
+	httpProvider := ProvideHttpProvider(httpServerProvider)
+	app, cleanup := ProvideApp(logger, httpProvider)
 	return app, func() {
 		cleanup()
 	}, nil

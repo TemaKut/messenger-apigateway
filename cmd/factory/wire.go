@@ -9,6 +9,8 @@ func InitApp() (App, func(), error) {
 	panic(
 		wire.Build(
 			AppSet,
+			HttpSet,
+			AdaptersSet,
 		),
 	)
 }
