@@ -14,6 +14,8 @@ import (
 type Session struct {
 	conn *websocket.Conn
 
+	delegateService DelegateService
+
 	states       map[sessionStateType]sessionState
 	currentState sessionState
 
@@ -21,22 +23,18 @@ type Session struct {
 	wg     sync.WaitGroup
 
 	logger *logger.Logger
-
-	// Depends  TODO не лайкаю чтобы именно сессия делегировала запросы. Изучить и применить другое решение
-	authService AuthService
-	// ^^^^^^^^^^
 }
 
 func NewSession(
 	conn *websocket.Conn,
-	authService AuthService,
+	delegateService DelegateService,
 	logger *logger.Logger,
 ) *Session {
 	session := &Session{
-		conn:        conn,
-		authService: authService,
-		doneCh:      make(chan struct{}, 1),
-		logger:      logger,
+		conn:            conn,
+		delegateService: delegateService,
+		doneCh:          make(chan struct{}, 1),
+		logger:          logger,
 	}
 
 	unauthorizedState := newUnauthorizedSessionState(session)
@@ -123,7 +121,14 @@ func (s *Session) ctx() context.Context { // TODO данные о юзере и 
 	return ctx
 }
 
-func (s *Session) sendResponse(ctx context.Context, response *pb.Response) error {
+func (s *Session) sendSuccessResponse(id uint64, success *pb.Success) error {
+	response := &pb.Response{
+		Id: id,
+		Source: &pb.Response_Success{
+			Success: success,
+		},
+	}
+
 	protoBytes, err := proto.Marshal(response)
 	if err != nil {
 		return fmt.Errorf("error marshalling response. %w", err)
@@ -136,6 +141,6 @@ func (s *Session) sendResponse(ctx context.Context, response *pb.Response) error
 	return nil
 }
 
-func (s *Session) getAuthService() AuthService {
-	return s.authService
+func (s *Session) getDelegateService() DelegateService {
+	return s.delegateService
 }

@@ -2,16 +2,16 @@ package websocket
 
 import (
 	"context"
-	"github.com/TemaKut/messenger-apigateway/internal/dto/auth"
+	"github.com/TemaKut/messenger-apigateway/internal/dto/delegate"
 	pb "github.com/TemaKut/messenger-client-proto/gen/go"
 )
 
 type sessionState interface {
 	handleRequest(ctx context.Context, req *pb.Request) error
 }
-type AuthService interface {
-	RegisterUser(
+type DelegateService interface {
+	OnUserRegisterRequest(
 		ctx context.Context,
-		req authdto.RegisterUserRequest,
-	) (authdto.RegisterUserResponse, error)
+		req delegatedto.UserRegisterRequest,
+	) (delegatedto.UserRegisterResponse, error)
 }

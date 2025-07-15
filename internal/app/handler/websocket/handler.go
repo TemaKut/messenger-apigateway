@@ -6,18 +6,17 @@ import (
 )
 
 type Handler struct {
-	authService AuthService
-
-	logger *logger.Logger
+	delegateService DelegateService
+	logger          *logger.Logger
 }
 
 func NewHandler(
-	authService AuthService,
+	delegateService DelegateService,
 	logger *logger.Logger,
 ) *Handler {
 	return &Handler{
-		authService: authService,
-		logger:      logger,
+		delegateService: delegateService,
+		logger:          logger,
 	}
 }
 
@@ -30,7 +29,7 @@ func (h *Handler) Handle(conn *websocket.Conn) {
 		_ = conn.Close()
 	}()
 
-	session := NewSession(conn, h.authService, h.logger)
+	session := NewSession(conn, h.delegateService, h.logger)
 	defer session.Shutdown()
 
 	if err := session.HandleRequests(conn.Request().Context()); err != nil {

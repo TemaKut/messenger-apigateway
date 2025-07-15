@@ -12,6 +12,7 @@ func InitApp() (App, func(), error) {
 			HttpSet,
 			GrpcClientsSet,
 			AdaptersSet,
+			ServiceSet,
 		),
 	)
 }

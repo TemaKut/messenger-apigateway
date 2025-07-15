@@ -10,6 +10,7 @@ import (
 	"github.com/TemaKut/messenger-apigateway/internal/app/adapter/auth"
 	"github.com/TemaKut/messenger-apigateway/internal/app/config"
 	"github.com/TemaKut/messenger-apigateway/internal/app/handler/websocket"
+	"github.com/TemaKut/messenger-apigateway/internal/service/delegate"
 )
 
 // Injectors from wire.go:
@@ -25,7 +26,8 @@ func InitApp() (App, func(), error) {
 		return App{}, nil, err
 	}
 	adapter := auth.NewAdapter(userAPIClient)
-	handler := websocket.NewHandler(adapter, logger)
+	service := delegatesvc.NewService(adapter)
+	handler := websocket.NewHandler(service, logger)
 	httpServerProvider, err := ProvideHttpServerProvider(configConfig, handler)
 	if err != nil {
 		cleanup()
