@@ -16,5 +16,11 @@ func (a *Adapter) RegisterUser(
 	ctx context.Context,
 	req authdto.RegisterUserRequest,
 ) (authdto.RegisterUserResponse, error) {
-	return authdto.RegisterUserResponse{}, nil
+	return authdto.RegisterUserResponse{
+		User: authdto.User{
+			Id:       "sdfsdf",
+			Name:     "dsfsd",
+			LastName: "rrrr",
+		},
+	}, nil
 }

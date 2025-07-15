@@ -7,6 +7,7 @@
 package factory
 
 import (
+	"github.com/TemaKut/messenger-apigateway/internal/app/adapter/auth"
 	"github.com/TemaKut/messenger-apigateway/internal/app/config"
 	"github.com/TemaKut/messenger-apigateway/internal/app/handler/websocket"
 )
@@ -19,7 +20,8 @@ func InitApp() (App, func(), error) {
 	if err != nil {
 		return App{}, nil, err
 	}
-	handler := websocket.NewHandler(logger)
+	adapter := auth.NewAdapter()
+	handler := websocket.NewHandler(adapter, logger)
 	httpServerProvider, err := ProvideHttpServerProvider(configConfig, handler)
 	if err != nil {
 		return App{}, nil, err

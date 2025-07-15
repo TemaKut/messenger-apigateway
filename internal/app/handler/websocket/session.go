@@ -21,16 +21,22 @@ type Session struct {
 	wg     sync.WaitGroup
 
 	logger *logger.Logger
+
+	// Depends  TODO не лайкаю чтобы именно сессия делегировала запросы. Изучить и применить другое решение
+	authService AuthService
+	// ^^^^^^^^^^
 }
 
 func NewSession(
 	conn *websocket.Conn,
+	authService AuthService,
 	logger *logger.Logger,
 ) *Session {
 	session := &Session{
-		conn:   conn,
-		doneCh: make(chan struct{}, 1),
-		logger: logger,
+		conn:        conn,
+		authService: authService,
+		doneCh:      make(chan struct{}, 1),
+		logger:      logger,
 	}
 
 	unauthorizedState := newUnauthorizedSessionState(session)
@@ -46,8 +52,6 @@ func NewSession(
 }
 
 func (s *Session) HandleRequests(ctx context.Context) error {
-	// TODO здесь пока синхронная обработка. Подумать над обрабткой нескольких запросов параллельно
-
 mainCycle:
 	for {
 		select {
@@ -111,7 +115,7 @@ func (s *Session) setState(stateType sessionStateType) error {
 	return nil
 }
 
-func (s *Session) ctx() context.Context { // TODO данные о юзере и тд
+func (s *Session) ctx() context.Context { // TODO данные о юзере и тд. обработку контекста скорее всего в либу
 	ctx := context.Background()
 
 	ctx = context.WithValue(ctx, "Key", "Value")
@@ -130,4 +134,8 @@ func (s *Session) sendResponse(ctx context.Context, response *pb.Response) error
 	}
 
 	return nil
+}
+
+func (s *Session) getAuthService() AuthService {
+	return s.authService
 }
