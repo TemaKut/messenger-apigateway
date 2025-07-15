@@ -28,7 +28,14 @@ func (u *unauthorizedSessionState) handleUserRegisterRequest(
 	ctx context.Context,
 	req *pb.Request,
 ) error {
-	registerUserResponse, err := u.session.getAuthService().RegisterUser(ctx, authdto.RegisterUserRequest{})
+	userRegisterRequest := req.GetUserRegister()
+
+	registerUserResponse, err := u.session.getAuthService().RegisterUser(ctx, authdto.RegisterUserRequest{
+		Name:     userRegisterRequest.GetName(),
+		LastName: userRegisterRequest.GetLastName(),
+		Email:    userRegisterRequest.GetEmail(),
+		Password: userRegisterRequest.GetPassword(),
+	})
 	if err != nil {
 		return fmt.Errorf("error register user. %w", err)
 	}

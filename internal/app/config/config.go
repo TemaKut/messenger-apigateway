@@ -9,6 +9,11 @@ type Config struct {
 			Addr string
 		}
 	}
+	Clients struct {
+		UserApi struct {
+			Addr string
+		}
+	}
 }
 
 func NewConfig() *Config { // TODO default + parse from env

@@ -20,15 +20,21 @@ func InitApp() (App, func(), error) {
 	if err != nil {
 		return App{}, nil, err
 	}
-	adapter := auth.NewAdapter()
-	handler := websocket.NewHandler(adapter, logger)
-	httpServerProvider, err := ProvideHttpServerProvider(configConfig, handler)
+	userAPIClient, cleanup, err := ProvideUserApiGrpcClient(configConfig, logger)
 	if err != nil {
 		return App{}, nil, err
 	}
+	adapter := auth.NewAdapter(userAPIClient)
+	handler := websocket.NewHandler(adapter, logger)
+	httpServerProvider, err := ProvideHttpServerProvider(configConfig, handler)
+	if err != nil {
+		cleanup()
+		return App{}, nil, err
+	}
 	httpProvider := ProvideHttpProvider(httpServerProvider)
-	app, cleanup := ProvideApp(logger, httpProvider)
+	app, cleanup2 := ProvideApp(logger, httpProvider)
 	return app, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }
