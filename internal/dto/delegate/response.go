@@ -9,3 +9,8 @@ type User struct {
 	Name     string
 	LastName string
 }
+
+type UserAuthorizeResponse struct {
+	User User
+	// TODO токены
+}

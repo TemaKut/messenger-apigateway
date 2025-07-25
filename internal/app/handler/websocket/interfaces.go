@@ -14,4 +14,8 @@ type DelegateService interface {
 		ctx context.Context,
 		req delegatedto.UserRegisterRequest,
 	) (delegatedto.UserRegisterResponse, error)
+	OnUserAuthorizeRequest(
+		ctx context.Context,
+		req delegatedto.UserAuthorizeRequest,
+	) (delegatedto.UserAuthorizeResponse, error)
 }

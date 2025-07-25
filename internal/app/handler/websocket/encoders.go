@@ -16,6 +16,16 @@ func encodeUserRegisterResponse(resp delegatedto.UserRegisterResponse) *pb.Succe
 	}
 }
 
+func encodeUserAuthorizeResponse(resp delegatedto.UserAuthorizeResponse) *pb.Success {
+	return &pb.Success{
+		Data: &pb.Success_UserAuthorize{
+			UserAuthorize: &pb.UserAuthorizeResponse{
+				//: encodeUser(resp.User), // TODO
+			},
+		},
+	}
+}
+
 func encodeUser(u delegatedto.User) *pbuser.User {
 	return &pbuser.User{
 		Id:       u.Id,

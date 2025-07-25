@@ -6,3 +6,16 @@ type UserRegisterRequest struct {
 	Email    string
 	Password string
 }
+
+type UserAuthorizeRequest struct {
+	Credentials UserAuthorizeCredentials
+}
+
+type UserAuthorizeCredentials struct {
+	Email *UserAuthorizeEmailCredential
+}
+
+type UserAuthorizeEmailCredential struct {
+	Email    string
+	Password string
+}

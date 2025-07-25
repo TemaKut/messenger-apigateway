@@ -7,6 +7,7 @@ import (
 	"github.com/TemaKut/messenger-apigateway/internal/app/logger"
 	delegatedto "github.com/TemaKut/messenger-apigateway/internal/dto/delegate"
 	pb "github.com/TemaKut/messenger-client-proto/gen/go"
+	"github.com/google/uuid"
 	"golang.org/x/net/websocket"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -15,6 +16,8 @@ import (
 )
 
 type Session struct {
+	id string
+
 	conn *websocket.Conn
 
 	delegateService DelegateService
@@ -34,6 +37,7 @@ func NewSession(
 	logger *logger.Logger,
 ) *Session {
 	session := &Session{
+		id:              uuid.NewString(),
 		conn:            conn,
 		delegateService: delegateService,
 		doneCh:          make(chan struct{}, 1),
@@ -63,29 +67,32 @@ mainCycle:
 		default:
 		}
 
+		reqBytes := make([]byte, 0)
+
+		if err := websocket.Message.Receive(s.conn, &reqBytes); err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+
+			return fmt.Errorf("error receive message. %w", err)
+		}
+
+		var req pb.Request
+
+		if err := proto.Unmarshal(reqBytes, &req); err != nil {
+			return fmt.Errorf("error unmarshalling request. %w", err)
+		}
+
 		s.wg.Add(1)
 
 		err := func() error {
 			defer s.wg.Done()
 
-			reqBytes := make([]byte, 0)
-
-			if err := websocket.Message.Receive(s.conn, &reqBytes); err != nil {
-				if err == io.EOF {
-					return nil
-				}
-
-				return fmt.Errorf("error receive message. %w", err)
-			}
-
-			var req pb.Request
-
-			if err := proto.Unmarshal(reqBytes, &req); err != nil {
-				return fmt.Errorf("error unmarshalling request. %w", err)
-			}
-
 			if req.GetId() == "" {
-				s.sendResponse(req.GetId(), nil, s.encodeResponseErrorSource(errRequestHasNoId))
+				err := s.sendResponse(req.GetId(), nil, s.encodeResponseErrorSource(errRequestHasNoId))
+				if err != nil {
+					return fmt.Errorf("error sending response. %w", err)
+				}
 			}
 
 			if err := s.currentState.handleRequest(s.ctx(), &req); err != nil {
@@ -124,6 +131,20 @@ func (s *Session) handleRequest(ctx context.Context, req *pb.Request) error {
 		}
 
 		success = encodeUserRegisterResponse(resp)
+	case req.GetUserAuthorize() != nil:
+		requestDecoded, err := decodeUserAuthorizeRequest(req.GetUserAuthorize())
+		if err != nil {
+			responseError = s.encodeResponseErrorSource(err)
+			break
+		}
+
+		resp, err := s.delegateService.OnUserAuthorizeRequest(ctx, requestDecoded)
+		if err != nil {
+			responseError = s.encodeResponseErrorSource(err)
+			break
+		}
+
+		success = encodeUserAuthorizeResponse(resp)
 	default:
 		return fmt.Errorf("error unsupported request type")
 	}
@@ -186,7 +207,7 @@ func (s *Session) sendResponse(id string, successSource *pb.Success, errorSource
 }
 
 func (s *Session) encodeResponseErrorSource(err error) *pb.Error {
-	s.logger.Errorf("error %s", err)
+	s.logger.Errorf("error for session (id=%s). %s", s.id, err)
 
 	var errorMessage pb.Error
 
@@ -200,6 +221,11 @@ func (s *Session) encodeResponseErrorSource(err error) *pb.Error {
 		errorMessage = pb.Error{
 			Reason:      pb.ErrorReason_ERROR_REASON_REQUEST_HAS_NO_ID,
 			Description: "request has no identifier",
+		}
+	case errors.Is(err, errForbidden):
+		errorMessage = pb.Error{
+			Reason:      pb.ErrorReason_ERROR_REASON_FORBIDDEN,
+			Description: "forbidden",
 		}
 	default:
 		errorMessage = pb.Error{

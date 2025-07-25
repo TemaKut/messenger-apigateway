@@ -17,6 +17,13 @@ type Service struct {
 	authService AuthService
 }
 
+func (s *Service) OnUserAuthorizeRequest(
+	ctx context.Context,
+	req delegatedto.UserAuthorizeRequest,
+) (delegatedto.UserAuthorizeResponse, error) {
+	return delegatedto.UserAuthorizeResponse{}, nil
+}
+
 func NewService(authService AuthService) *Service {
 	return &Service{authService: authService}
 }
