@@ -81,6 +81,8 @@ mainCycle:
 				return fmt.Errorf("error unmarshalling request. %w", err)
 			}
 
+			fmt.Println(s.conn.Request().Header)
+
 			if err := s.currentState.handleRequest(s.ctx(), &req); err != nil {
 				return fmt.Errorf("error handling request. %w", err)
 			}

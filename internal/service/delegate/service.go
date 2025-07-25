@@ -2,7 +2,9 @@ package delegatesvc
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/TemaKut/messenger-apigateway/internal/app/adapter/auth"
 	delegatedto "github.com/TemaKut/messenger-apigateway/internal/dto/delegate"
 )
 
@@ -25,8 +27,21 @@ func (s *Service) OnUserRegisterRequest(
 ) (delegatedto.UserRegisterResponse, error) {
 	userRegisterResponse, err := s.authService.RegisterUser(ctx, decodeUserRegisterRequest(req))
 	if err != nil {
-		return delegatedto.UserRegisterResponse{}, fmt.Errorf("error register user. %w", err)
+		return delegatedto.UserRegisterResponse{}, fmt.Errorf("error register user. %w", encodeError(err))
 	}
 
 	return encodeUserRegisterResponse(userRegisterResponse), nil
+}
+
+func encodeError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	switch {
+	case errors.Is(err, auth.ErrUserEmailAlreadyExists):
+		return fmt.Errorf("%w, %w", delegatedto.ErrUserEmailAlreadyExists, err)
+	default:
+		return fmt.Errorf("%w, %w", delegatedto.ErrUnknown, err)
+	}
 }

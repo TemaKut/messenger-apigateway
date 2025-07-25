@@ -28,7 +28,7 @@ func (a *Adapter) RegisterUser(
 		Password: req.Password,
 	})
 	if err != nil {
-		return authdto.RegisterUserResponse{}, fmt.Errorf("error registering user. %w", err)
+		return authdto.RegisterUserResponse{}, fmt.Errorf("error registering user. %w", encodeError(err))
 	}
 
 	return authdto.RegisterUserResponse{
