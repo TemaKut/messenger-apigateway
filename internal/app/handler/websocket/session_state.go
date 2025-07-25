@@ -15,25 +15,14 @@ func newUnauthorizedSessionState(session *Session) *unauthorizedSessionState {
 }
 
 func (u *unauthorizedSessionState) handleRequest(ctx context.Context, req *pb.Request) error {
-	var success *pb.Success
-
-	switch { // TODO этот метод будет сильно разростаться подумать как его компактизировать
+	switch {
 	case req.GetUserRegister() != nil:
-		resp, err := u.session.getDelegateService().OnUserRegisterRequest(
-			ctx,
-			decodeUserRegisterRequest(req.GetUserRegister()),
-		)
-		if err != nil {
-			return fmt.Errorf("error delegate user register request. %w", err)
-		}
-
-		success = encodeUserRegisterResponse(resp)
 	default:
-		return fmt.Errorf("error unsupported request type")
+		return fmt.Errorf("error unsupported request (id=%s) for unauthorized session", req.GetId())
 	}
 
-	if err := u.session.sendSuccessResponse(req.GetId(), success); err != nil {
-		return fmt.Errorf("error sending success response. %w", err)
+	if err := u.session.handleRequest(ctx, req); err != nil {
+		return fmt.Errorf("error handle request. %w", err)
 	}
 
 	return nil

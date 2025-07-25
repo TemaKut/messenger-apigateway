@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/TemaKut/messenger-apigateway/tests/integration/client"
 	pb "github.com/TemaKut/messenger-client-proto/gen/go"
+	"github.com/google/uuid"
 	"testing"
 	"time"
 )
@@ -23,12 +24,12 @@ func TestUserRegister(t *testing.T) {
 	defer cli.Close()
 
 	response, err := cli.Request(context.Background(), &pb.Request{
-		Id: 2,
+		Id: uuid.NewString(),
 		Data: &pb.Request_UserRegister{
 			UserRegister: &pb.UserRegisterRequest{
-				Name:     "Name",
-				LastName: "LastName",
-				Email:    "email@email.ru",
+				Name:     "Name2",
+				LastName: "LastName2",
+				Email:    "email2@email.ru",
 				Password: "123123",
 			},
 		},

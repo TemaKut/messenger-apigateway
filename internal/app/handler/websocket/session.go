@@ -2,11 +2,14 @@ package websocket
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/TemaKut/messenger-apigateway/internal/app/logger"
+	delegatedto "github.com/TemaKut/messenger-apigateway/internal/dto/delegate"
 	pb "github.com/TemaKut/messenger-client-proto/gen/go"
 	"golang.org/x/net/websocket"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
 	"sync"
 )
@@ -81,7 +84,9 @@ mainCycle:
 				return fmt.Errorf("error unmarshalling request. %w", err)
 			}
 
-			fmt.Println(s.conn.Request().Header)
+			if req.GetId() == "" {
+				s.sendResponse(req.GetId(), nil, s.encodeResponseErrorSource(errRequestHasNoId))
+			}
 
 			if err := s.currentState.handleRequest(s.ctx(), &req); err != nil {
 				return fmt.Errorf("error handling request. %w", err)
@@ -104,6 +109,32 @@ func (s *Session) Shutdown() {
 	s.wg.Wait()
 }
 
+func (s *Session) handleRequest(ctx context.Context, req *pb.Request) error {
+	var (
+		success       *pb.Success
+		responseError *pb.Error
+	)
+
+	switch { // TODO мне не нравится подобная обработка внутри кейса. Этот метод сильно разрастётся
+	case req.GetUserRegister() != nil:
+		resp, err := s.delegateService.OnUserRegisterRequest(ctx, decodeUserRegisterRequest(req.GetUserRegister()))
+		if err != nil {
+			responseError = s.encodeResponseErrorSource(err)
+			break
+		}
+
+		success = encodeUserRegisterResponse(resp)
+	default:
+		return fmt.Errorf("error unsupported request type")
+	}
+
+	if err := s.sendResponse(req.GetId(), success, responseError); err != nil {
+		return fmt.Errorf("error sending response. %w", err)
+	}
+
+	return nil
+}
+
 func (s *Session) setState(stateType sessionStateType) error {
 	state, ok := s.states[stateType]
 	if !ok {
@@ -123,12 +154,23 @@ func (s *Session) ctx() context.Context { // TODO данные о юзере и 
 	return ctx
 }
 
-func (s *Session) sendSuccessResponse(id uint64, success *pb.Success) error {
+func (s *Session) sendResponse(id string, successSource *pb.Success, errorSource *pb.Error) error {
 	response := &pb.Response{
-		Id: id,
-		Source: &pb.Response_Success{
-			Success: success,
-		},
+		Id:         id,
+		ServerTime: timestamppb.Now(),
+	}
+
+	switch {
+	case successSource != nil:
+		response.Source = &pb.Response_Success{
+			Success: successSource,
+		}
+	case errorSource != nil:
+		response.Source = &pb.Response_Error{
+			Error: errorSource,
+		}
+	default:
+		return fmt.Errorf("error response (id=%s) has no source", id)
 	}
 
 	protoBytes, err := proto.Marshal(response)
@@ -143,6 +185,28 @@ func (s *Session) sendSuccessResponse(id uint64, success *pb.Success) error {
 	return nil
 }
 
-func (s *Session) getDelegateService() DelegateService {
-	return s.delegateService
+func (s *Session) encodeResponseErrorSource(err error) *pb.Error {
+	s.logger.Errorf("error %s", err)
+
+	var errorMessage pb.Error
+
+	switch {
+	case errors.Is(err, delegatedto.ErrUserEmailAlreadyExists):
+		errorMessage = pb.Error{
+			Reason:      pb.ErrorReason_ERROR_REASON_USER_EMAIL_ALREADY_EXISTS,
+			Description: "user email already exists",
+		}
+	case errors.Is(err, errRequestHasNoId):
+		errorMessage = pb.Error{
+			Reason:      pb.ErrorReason_ERROR_REASON_REQUEST_HAS_NO_ID,
+			Description: "request has no identifier",
+		}
+	default:
+		errorMessage = pb.Error{
+			Reason:      pb.ErrorReason_ERROR_REASON_UNKNOWN,
+			Description: "unknown error",
+		}
+	}
+
+	return &errorMessage
 }

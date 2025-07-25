@@ -3,12 +3,15 @@ module github.com/TemaKut/messenger-apigateway
 go 1.24.5
 
 require (
-	github.com/TemaKut/messenger-client-proto v0.0.0-20250714213226-e665cae4cc0a
+	github.com/TemaKut/messenger-client-proto v0.0.0-20250725122811-a02ee442d163
 	github.com/TemaKut/messenger-service-proto v0.0.0-20250715111334-4b45ecc1ff53
+	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.6.0
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/urfave/cli/v2 v2.27.7
 	golang.org/x/net v0.42.0
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463
+	google.golang.org/grpc v1.73.0
 	google.golang.org/protobuf v1.36.6
 )
 
@@ -24,6 +27,4 @@ require (
 	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
-	google.golang.org/grpc v1.73.0 // indirect
 )
