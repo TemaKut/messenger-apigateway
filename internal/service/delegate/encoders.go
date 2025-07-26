@@ -51,6 +51,8 @@ func encodeError(err error) error {
 	switch {
 	case errors.Is(err, auth.ErrUserEmailAlreadyExists):
 		return fmt.Errorf("%w, %w", delegatedto.ErrUserEmailAlreadyExists, err)
+	case errors.Is(err, auth.ErrInvalidCredentials):
+		return fmt.Errorf("%w. %w", delegatedto.ErrInvalidUserCredentials, err)
 	default:
 		return fmt.Errorf("%w, %w", delegatedto.ErrUnknown, err)
 	}

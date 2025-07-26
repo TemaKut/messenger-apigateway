@@ -27,9 +27,9 @@ func TestUserRegister(t *testing.T) {
 		Id: uuid.NewString(),
 		Data: &pb.Request_UserRegister{
 			UserRegister: &pb.UserRegisterRequest{
-				Name:     "Name2",
-				LastName: "LastName2",
-				Email:    "email2@email.ru",
+				Name:     "Name3",
+				LastName: "LastName3",
+				Email:    "email3@email.ru",
 				Password: "123123",
 			},
 		},
@@ -61,7 +61,7 @@ func TestUserAuthorizeByEmail(t *testing.T) {
 			UserAuthorize: &pb.UserAuthorizeRequest{
 				Credentials: &pb.UserAuthorizeRequest_Email{
 					Email: &pb.UserAuthorizeEmailCredential{
-						Email:    "email2@email.ru",
+						Email:    "email3@email.ru",
 						Password: "123123",
 					},
 				},

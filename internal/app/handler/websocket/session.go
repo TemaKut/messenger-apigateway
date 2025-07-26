@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/TemaKut/messenger-apigateway/internal/app/adapter/auth"
 	"github.com/TemaKut/messenger-apigateway/internal/app/logger"
 	delegatedto "github.com/TemaKut/messenger-apigateway/internal/dto/delegate"
 	pb "github.com/TemaKut/messenger-client-proto/gen/go"
@@ -226,6 +227,11 @@ func (s *Session) encodeResponseErrorSource(err error) *pb.Error {
 		errorMessage = pb.Error{
 			Reason:      pb.ErrorReason_ERROR_REASON_FORBIDDEN,
 			Description: "forbidden",
+		}
+	case errors.Is(err, auth.ErrInvalidCredentials):
+		errorMessage = pb.Error{
+			Reason:      pb.ErrorReason_ERROR_REASON_USER_INVALID_CREDENTIALS,
+			Description: "invalid user credentials",
 		}
 	default:
 		errorMessage = pb.Error{

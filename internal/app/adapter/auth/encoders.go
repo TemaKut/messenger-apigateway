@@ -53,8 +53,10 @@ func encodeError(err error) error {
 	}
 
 	switch detailReason {
-	case "user-email-already-exist":
+	case "auth.user-email-already-exist":
 		return fmt.Errorf("%w. %s", ErrUserEmailAlreadyExists, st.Message())
+	case "auth.invalid-user-credentials":
+		return fmt.Errorf("%w. %s", ErrInvalidCredentials, st.Message())
 	default:
 		return ErrUnknown
 	}
