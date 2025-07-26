@@ -6,8 +6,6 @@ import (
 )
 
 type AuthService interface {
-	RegisterUser(
-		ctx context.Context,
-		req authdto.RegisterUserRequest,
-	) (authdto.RegisterUserResponse, error)
+	Register(ctx context.Context, req authdto.RegisterUserRequest) (authdto.RegisterUserResponse, error)
+	Authorize(ctx context.Context, req authdto.UserAuthorizeRequest) (authdto.UserAuthorizeResponse, error)
 }

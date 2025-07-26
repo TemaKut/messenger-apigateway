@@ -2,9 +2,8 @@ package delegatesvc
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/TemaKut/messenger-apigateway/internal/app/adapter/auth"
+
 	delegatedto "github.com/TemaKut/messenger-apigateway/internal/dto/delegate"
 )
 
@@ -17,13 +16,6 @@ type Service struct {
 	authService AuthService
 }
 
-func (s *Service) OnUserAuthorizeRequest(
-	ctx context.Context,
-	req delegatedto.UserAuthorizeRequest,
-) (delegatedto.UserAuthorizeResponse, error) {
-	return delegatedto.UserAuthorizeResponse{}, nil
-}
-
 func NewService(authService AuthService) *Service {
 	return &Service{authService: authService}
 }
@@ -32,7 +24,7 @@ func (s *Service) OnUserRegisterRequest(
 	ctx context.Context,
 	req delegatedto.UserRegisterRequest,
 ) (delegatedto.UserRegisterResponse, error) {
-	userRegisterResponse, err := s.authService.RegisterUser(ctx, decodeUserRegisterRequest(req))
+	userRegisterResponse, err := s.authService.Register(ctx, decodeUserRegisterRequest(req))
 	if err != nil {
 		return delegatedto.UserRegisterResponse{}, fmt.Errorf("error register user. %w", encodeError(err))
 	}
@@ -40,15 +32,19 @@ func (s *Service) OnUserRegisterRequest(
 	return encodeUserRegisterResponse(userRegisterResponse), nil
 }
 
-func encodeError(err error) error {
-	if err == nil {
-		return nil
+func (s *Service) OnUserAuthorizeRequest(
+	ctx context.Context,
+	req delegatedto.UserAuthorizeRequest,
+) (delegatedto.UserAuthorizeResponse, error) {
+	userAuthorizeRequest, err := decodeUserAuthorizeRequest(req)
+	if err != nil {
+		return delegatedto.UserAuthorizeResponse{}, fmt.Errorf("error decode user authorize request. %w", err)
 	}
 
-	switch {
-	case errors.Is(err, auth.ErrUserEmailAlreadyExists):
-		return fmt.Errorf("%w, %w", delegatedto.ErrUserEmailAlreadyExists, err)
-	default:
-		return fmt.Errorf("%w, %w", delegatedto.ErrUnknown, err)
+	authorizeResponse, err := s.authService.Authorize(ctx, userAuthorizeRequest)
+	if err != nil {
+		return delegatedto.UserAuthorizeResponse{}, fmt.Errorf("error authorize user. %w", encodeError(err))
 	}
+
+	return encodeAuthorizeResponse(authorizeResponse), nil
 }

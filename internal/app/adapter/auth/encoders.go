@@ -16,6 +16,27 @@ func encodeUser(user *authv1.User) authdto.User {
 	}
 }
 
+func encodeAuthorizeResponse(response *authv1.UserAPIAuthorizeResponse) authdto.UserAuthorizeResponse {
+	return authdto.UserAuthorizeResponse{
+		User:       encodeUser(response.GetUser()),
+		AuthParams: encodeAuthParams(response.GetAuthParams()),
+	}
+}
+
+func encodeAuthParams(params *authv1.AuthParams) authdto.AuthParams {
+	return authdto.AuthParams{
+		AccessToken:  encodeAuthToken(params.GetAccessToken()),
+		RefreshToken: encodeAuthToken(params.GetRefreshToken()),
+	}
+}
+
+func encodeAuthToken(token *authv1.AuthToken) authdto.AuthToken {
+	return authdto.AuthToken{
+		Token:     token.GetToken(),
+		ExpiredAt: token.GetExpiredAt().AsTime(),
+	}
+}
+
 func encodeError(err error) error {
 	st, ok := status.FromError(err)
 	if !ok {

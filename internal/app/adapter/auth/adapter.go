@@ -17,11 +17,11 @@ func NewAdapter(userApiClient authv1.UserAPIClient) *Adapter {
 	}
 }
 
-func (a *Adapter) RegisterUser(
+func (a *Adapter) Register(
 	ctx context.Context,
 	req authdto.RegisterUserRequest,
 ) (authdto.RegisterUserResponse, error) {
-	userRegisterResponse, err := a.userApiClient.UserRegister(ctx, &authv1.UserAPIUserRegisterRequest{
+	userRegisterResponse, err := a.userApiClient.Register(ctx, &authv1.UserAPIRegisterRequest{
 		Name:     req.Name,
 		LastName: req.LastName,
 		Email:    req.Email,
@@ -34,4 +34,21 @@ func (a *Adapter) RegisterUser(
 	return authdto.RegisterUserResponse{
 		User: encodeUser(userRegisterResponse.GetUser()),
 	}, nil
+}
+
+func (a *Adapter) Authorize(
+	ctx context.Context,
+	req authdto.UserAuthorizeRequest,
+) (authdto.UserAuthorizeResponse, error) {
+	authorizeRequest, err := decodeUserAuthorizeRequest(req)
+	if err != nil {
+		return authdto.UserAuthorizeResponse{}, fmt.Errorf("error decodeauthorize request. %w", err)
+	}
+
+	authorizeResponse, err := a.userApiClient.Authorize(ctx, authorizeRequest)
+	if err != nil {
+		return authdto.UserAuthorizeResponse{}, fmt.Errorf("error authorize. %w", encodeError(err))
+	}
+
+	return encodeAuthorizeResponse(authorizeResponse), nil
 }
