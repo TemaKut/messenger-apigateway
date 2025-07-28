@@ -1,5 +1,5 @@
-github.com/TemaKut/messenger-client-proto v0.0.0-20250726194609-172927ebeb20 h1:sNNxMjov+u1ZU8WQ7AulJd+pwsMIEACNIUTkpRuvMCM=
-github.com/TemaKut/messenger-client-proto v0.0.0-20250726194609-172927ebeb20/go.mod h1:PdhLeijopaVahKVDHk9iWsxFag5NjRl47XgmnIgBDRU=
+github.com/TemaKut/messenger-client-proto v0.0.0-20250728112220-6d8a7c27d669 h1:SxKuk7kFVoy21rIZfJjzkaUhGHiAG+JF2kBaDl0+M1I=
+github.com/TemaKut/messenger-client-proto v0.0.0-20250728112220-6d8a7c27d669/go.mod h1:PdhLeijopaVahKVDHk9iWsxFag5NjRl47XgmnIgBDRU=
 github.com/TemaKut/messenger-service-proto v0.0.0-20250726143444-efa9a0bf13a2 h1:bEFSXwK9eh7zgo9tVQMvx9+nxHpo5Syh1vybTomR3Zk=
 github.com/TemaKut/messenger-service-proto v0.0.0-20250726143444-efa9a0bf13a2/go.mod h1:CvTyhyJ5m8nhcfrcxo+JIxJFd5qrvIXvjdvv7XJ8/us=
 github.com/cpuguy83/go-md2man/v2 v2.0.7 h1:zbFlGlXEAKlwXpmvle3d8Oe3YnkKIK4xSRTd3sHPnBo=

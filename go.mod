@@ -3,7 +3,7 @@ module github.com/TemaKut/messenger-apigateway
 go 1.24.5
 
 require (
-	github.com/TemaKut/messenger-client-proto v0.0.0-20250726194609-172927ebeb20
+	github.com/TemaKut/messenger-client-proto v0.0.0-20250728112220-6d8a7c27d669
 	github.com/TemaKut/messenger-service-proto v0.0.0-20250726143444-efa9a0bf13a2
 	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.6.0

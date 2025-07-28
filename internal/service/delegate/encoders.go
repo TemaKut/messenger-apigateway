@@ -53,6 +53,8 @@ func encodeError(err error) error {
 		return fmt.Errorf("%w, %w", delegatedto.ErrUserEmailAlreadyExists, err)
 	case errors.Is(err, auth.ErrInvalidCredentials):
 		return fmt.Errorf("%w. %w", delegatedto.ErrInvalidUserCredentials, err)
+	case errors.Is(err, auth.ErrValidation):
+		return fmt.Errorf("%w, %w", delegatedto.ErrValidation, err)
 	default:
 		return fmt.Errorf("%w, %w", delegatedto.ErrUnknown, err)
 	}

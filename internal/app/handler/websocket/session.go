@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/TemaKut/messenger-apigateway/internal/app/adapter/auth"
 	"github.com/TemaKut/messenger-apigateway/internal/app/logger"
 	delegatedto "github.com/TemaKut/messenger-apigateway/internal/dto/delegate"
 	pb "github.com/TemaKut/messenger-client-proto/gen/go"
@@ -90,7 +89,7 @@ mainCycle:
 			defer s.wg.Done()
 
 			if req.GetId() == "" {
-				err := s.sendResponse(req.GetId(), nil, s.encodeResponseErrorSource(errRequestHasNoId))
+				err := s.sendResponse(req.GetId(), nil, s.encodeError(errRequestHasNoId))
 				if err != nil {
 					return fmt.Errorf("error sending response. %w", err)
 				}
@@ -127,7 +126,7 @@ func (s *Session) handleRequest(ctx context.Context, req *pb.Request) error {
 	case req.GetUserRegister() != nil:
 		resp, err := s.delegateService.OnUserRegisterRequest(ctx, decodeUserRegisterRequest(req.GetUserRegister()))
 		if err != nil {
-			responseError = s.encodeResponseErrorSource(err)
+			responseError = s.encodeError(err)
 			break
 		}
 
@@ -135,13 +134,13 @@ func (s *Session) handleRequest(ctx context.Context, req *pb.Request) error {
 	case req.GetUserAuthorize() != nil:
 		requestDecoded, err := decodeUserAuthorizeRequest(req.GetUserAuthorize())
 		if err != nil {
-			responseError = s.encodeResponseErrorSource(err)
+			responseError = s.encodeError(err)
 			break
 		}
 
 		resp, err := s.delegateService.OnUserAuthorizeRequest(ctx, requestDecoded)
 		if err != nil {
-			responseError = s.encodeResponseErrorSource(err)
+			responseError = s.encodeError(err)
 			break
 		}
 
@@ -207,7 +206,7 @@ func (s *Session) sendResponse(id string, successSource *pb.Success, errorSource
 	return nil
 }
 
-func (s *Session) encodeResponseErrorSource(err error) *pb.Error {
+func (s *Session) encodeError(err error) *pb.Error {
 	s.logger.Errorf("error for session (id=%s). %s", s.id, err)
 
 	var errorMessage pb.Error
@@ -228,10 +227,15 @@ func (s *Session) encodeResponseErrorSource(err error) *pb.Error {
 			Reason:      pb.ErrorReason_ERROR_REASON_FORBIDDEN,
 			Description: "forbidden",
 		}
-	case errors.Is(err, auth.ErrInvalidCredentials):
+	case errors.Is(err, delegatedto.ErrInvalidUserCredentials):
 		errorMessage = pb.Error{
 			Reason:      pb.ErrorReason_ERROR_REASON_USER_INVALID_CREDENTIALS,
 			Description: "invalid user credentials",
+		}
+	case errors.Is(err, delegatedto.ErrValidation):
+		errorMessage = pb.Error{
+			Reason:      pb.ErrorReason_ERROR_REASON_VALIDATION,
+			Description: "validation error",
 		}
 	default:
 		errorMessage = pb.Error{

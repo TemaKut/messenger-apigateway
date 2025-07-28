@@ -57,6 +57,8 @@ func encodeError(err error) error {
 		return fmt.Errorf("%w. %s", ErrUserEmailAlreadyExists, st.Message())
 	case "auth.invalid-user-credentials":
 		return fmt.Errorf("%w. %s", ErrInvalidCredentials, st.Message())
+	case "auth.validation":
+		return fmt.Errorf("%w. %s", ErrValidation, st.Message())
 	default:
 		return ErrUnknown
 	}
