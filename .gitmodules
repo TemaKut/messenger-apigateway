@@ -1,0 +1,3 @@
+[submodule "infra/k8s"]
+	path = infra/k8s
+	url = https://github.com/TemaKut/messenger-k8s.git
