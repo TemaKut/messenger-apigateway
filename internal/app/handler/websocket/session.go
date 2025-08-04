@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/TemaKut/messenger-apigateway/internal/app/logger"
-	delegatedto "github.com/TemaKut/messenger-apigateway/internal/dto/delegate"
 	pb "github.com/TemaKut/messenger-client-proto/gen/go"
 	"github.com/google/uuid"
 	"golang.org/x/net/websocket"
@@ -67,9 +66,9 @@ mainCycle:
 		default:
 		}
 
-		reqBytes := make([]byte, 0)
+		requestBytes := make([]byte, 0)
 
-		if err := websocket.Message.Receive(s.conn, &reqBytes); err != nil {
+		if err := websocket.Message.Receive(s.conn, &requestBytes); err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
@@ -79,21 +78,22 @@ mainCycle:
 
 		var req pb.Request
 
-		if err := proto.Unmarshal(reqBytes, &req); err != nil {
+		if err := proto.Unmarshal(requestBytes, &req); err != nil {
 			return fmt.Errorf("error unmarshalling request. %w", err)
+		}
+
+		if req.GetId() == "" {
+			if err := s.sendError("", errRequestHasNoId); err != nil {
+				return fmt.Errorf("error send error. %w", err)
+			}
+
+			continue
 		}
 
 		s.wg.Add(1)
 
 		err := func() error {
 			defer s.wg.Done()
-
-			if req.GetId() == "" {
-				err := s.sendResponse(req.GetId(), nil, s.encodeError(errRequestHasNoId))
-				if err != nil {
-					return fmt.Errorf("error sending response. %w", err)
-				}
-			}
 
 			if err := s.currentState.handleRequest(s.ctx(), &req); err != nil {
 				return fmt.Errorf("error handling request. %w", err)
@@ -117,40 +117,32 @@ func (s *Session) Shutdown() {
 }
 
 func (s *Session) handleRequest(ctx context.Context, req *pb.Request) error {
-	var (
-		success       *pb.Success
-		responseError *pb.Error
-	)
-
-	switch { // TODO мне не нравится подобная обработка внутри кейса. Этот метод сильно разрастётся
+	switch {
 	case req.GetUserRegister() != nil:
 		resp, err := s.delegateService.OnUserRegisterRequest(ctx, decodeUserRegisterRequest(req.GetUserRegister()))
 		if err != nil {
-			responseError = s.encodeError(err)
-			break
+			return s.sendError(req.GetId(), err)
 		}
 
-		success = encodeUserRegisterResponse(resp)
+		if err := s.sendResponse(req.GetId(), encodeUserRegisterResponse(resp)); err != nil {
+			return fmt.Errorf("error sending response. %w", err)
+		}
 	case req.GetUserAuthorize() != nil:
 		requestDecoded, err := decodeUserAuthorizeRequest(req.GetUserAuthorize())
 		if err != nil {
-			responseError = s.encodeError(err)
-			break
+			return s.sendError(req.GetId(), err)
 		}
 
 		resp, err := s.delegateService.OnUserAuthorizeRequest(ctx, requestDecoded)
 		if err != nil {
-			responseError = s.encodeError(err)
-			break
+			return s.sendError(req.GetId(), err)
 		}
 
-		success = encodeUserAuthorizeResponse(resp)
+		if err := s.sendResponse(req.GetId(), encodeUserAuthorizeResponse(resp)); err != nil {
+			return fmt.Errorf("error sending response. %w", err)
+		}
 	default:
 		return fmt.Errorf("error unsupported request type")
-	}
-
-	if err := s.sendResponse(req.GetId(), success, responseError); err != nil {
-		return fmt.Errorf("error sending response. %w", err)
 	}
 
 	return nil
@@ -175,28 +167,29 @@ func (s *Session) ctx() context.Context { // TODO данные о юзере и 
 	return ctx
 }
 
-func (s *Session) sendResponse(id string, successSource *pb.Success, errorSource *pb.Error) error {
-	response := &pb.Response{
-		Id:         id,
-		ServerTime: timestamppb.Now(),
-	}
+func (s *Session) sendResponse(requestId string, responseData proto.Message) error {
+	var response pb.Response
 
-	switch {
-	case successSource != nil:
-		response.Source = &pb.Response_Success{
-			Success: successSource,
-		}
-	case errorSource != nil:
-		response.Source = &pb.Response_Error{
-			Error: errorSource,
-		}
+	switch data := responseData.(type) {
+	case *pb.UserRegisterResponse:
+		response.Data = &pb.Response_UserRegister{UserRegister: data}
+	case *pb.UserAuthorizeResponse:
+		response.Data = &pb.Response_UserAuthorize{UserAuthorize: data}
 	default:
-		return fmt.Errorf("error response (id=%s) has no source", id)
+		return fmt.Errorf("error unknown response type: %T", data)
 	}
 
-	protoBytes, err := proto.Marshal(response)
+	responseContainer := pb.ServerMessageContainer{
+		RequestId:  requestId,
+		ServerTime: timestamppb.Now(),
+		Data: &pb.ServerMessageContainer_Response{
+			Response: &response,
+		},
+	}
+
+	protoBytes, err := proto.Marshal(&responseContainer)
 	if err != nil {
-		return fmt.Errorf("error marshalling response. %w", err)
+		return fmt.Errorf("error marshalling server message container. %w", err)
 	}
 
 	if err := websocket.Message.Send(s.conn, protoBytes); err != nil {
@@ -206,43 +199,25 @@ func (s *Session) sendResponse(id string, successSource *pb.Success, errorSource
 	return nil
 }
 
-func (s *Session) encodeError(err error) *pb.Error {
-	s.logger.Errorf("error for session (id=%s). %s", s.id, err)
+func (s *Session) sendError(requestId string, errForSend error) error {
+	s.logger.Errorf("error for session (id=%s). %s", s.id, errForSend)
 
-	var errorMessage pb.Error
-
-	switch {
-	case errors.Is(err, delegatedto.ErrUserEmailAlreadyExists):
-		errorMessage = pb.Error{
-			Reason:      pb.ErrorReason_ERROR_REASON_USER_EMAIL_ALREADY_EXISTS,
-			Description: "user email already exists",
-		}
-	case errors.Is(err, errRequestHasNoId):
-		errorMessage = pb.Error{
-			Reason:      pb.ErrorReason_ERROR_REASON_REQUEST_HAS_NO_ID,
-			Description: "request has no identifier",
-		}
-	case errors.Is(err, errForbidden):
-		errorMessage = pb.Error{
-			Reason:      pb.ErrorReason_ERROR_REASON_FORBIDDEN,
-			Description: "forbidden",
-		}
-	case errors.Is(err, delegatedto.ErrInvalidUserCredentials):
-		errorMessage = pb.Error{
-			Reason:      pb.ErrorReason_ERROR_REASON_USER_INVALID_CREDENTIALS,
-			Description: "invalid user credentials",
-		}
-	case errors.Is(err, delegatedto.ErrValidation):
-		errorMessage = pb.Error{
-			Reason:      pb.ErrorReason_ERROR_REASON_VALIDATION,
-			Description: "validation error",
-		}
-	default:
-		errorMessage = pb.Error{
-			Reason:      pb.ErrorReason_ERROR_REASON_UNKNOWN,
-			Description: "unknown error",
-		}
+	errorContainer := pb.ServerMessageContainer{
+		RequestId:  requestId,
+		ServerTime: timestamppb.Now(),
+		Data: &pb.ServerMessageContainer_Error{
+			Error: encodeError(errForSend),
+		},
 	}
 
-	return &errorMessage
+	protoBytes, err := proto.Marshal(&errorContainer)
+	if err != nil {
+		return fmt.Errorf("error marshalling server message container. %w", err)
+	}
+
+	if err := websocket.Message.Send(s.conn, protoBytes); err != nil {
+		return fmt.Errorf("error sending error. %w", err)
+	}
+
+	return nil
 }

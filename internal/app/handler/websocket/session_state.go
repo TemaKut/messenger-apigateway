@@ -20,11 +20,8 @@ func (u *unauthorizedSessionState) handleRequest(ctx context.Context, req *pb.Re
 	case req.GetUserAuthorize() != nil:
 	default:
 		err := fmt.Errorf("error unsupported unauthorized request (id=%s). %w", req.GetId(), errForbidden)
-		if err := u.session.sendResponse(req.GetId(), nil, u.session.encodeError(err)); err != nil {
-			return fmt.Errorf("error sending response. %w", err)
-		}
 
-		return nil
+		return u.session.sendError(req.GetId(), err)
 	}
 
 	if err := u.session.handleRequest(ctx, req); err != nil {
