@@ -21,7 +21,7 @@ jobs:
           context: .
           file: ./infra/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_REGISTRY_USERNAME }}/messenger-auth:${{ github.sha }}
+          tags: ${{ secrets.DOCKER_REGISTRY_USERNAME }}/messenger-apigateway:${{ github.sha }}
 
 #  apply-k8s-manifests:
 #    needs: build-and-push-registry
