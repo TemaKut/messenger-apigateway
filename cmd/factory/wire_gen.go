@@ -16,7 +16,10 @@ import (
 // Injectors from wire.go:
 
 func InitApp() (App, func(), error) {
-	configConfig := config.NewConfig()
+	configConfig, err := config.NewConfig()
+	if err != nil {
+		return App{}, nil, err
+	}
 	logger, err := ProvideLogger(configConfig)
 	if err != nil {
 		return App{}, nil, err

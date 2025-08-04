@@ -23,11 +23,10 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_REGISTRY_USERNAME }}/messenger-apigateway:${{ github.sha }}
 
-#  apply-k8s-manifests:
-#    needs: build-and-push-registry
-#    uses: TemaKut/messenger-k8s/.github/workflows/service-auth-deploy-action.yml@main
-#    with:
-#      path-to-root: infra/k8s/
-#      apply-config: true
-#      apply-db: true
-#      apply-service-tag: ${{ github.sha }}
+  apply-k8s-manifests:
+    needs: build-and-push-registry
+    uses: TemaKut/messenger-k8s/.github/workflows/service-apigateway-deploy-action.yaml@main
+    with:
+      path-to-root: infra/k8s/
+      apply-config: true
+      apply-service-tag: ${{ github.sha }}

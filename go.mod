@@ -5,6 +5,7 @@ go 1.24.5
 require (
 	github.com/TemaKut/messenger-client-proto v0.0.0-20250728112220-6d8a7c27d669
 	github.com/TemaKut/messenger-service-proto v0.0.0-20250726143444-efa9a0bf13a2
+	github.com/caarlos0/env/v11 v11.3.1
 	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.6.0
 	github.com/labstack/echo/v4 v4.13.4
